@@ -1,0 +1,39 @@
+# -*- coding: utf-8 -*-
+import tornado.options
+import tornado.httpserver
+import tornado.ioloop
+import asyncio
+import logging
+
+from tornado.platform.asyncio import AsyncIOMainLoop
+from tornado.options import define, options
+from dotenv import load_dotenv, find_dotenv
+
+# load environment
+load_dotenv(find_dotenv())
+
+from app import create_app
+
+define("port", default=9097, help="run on the given port", type=int)
+define("log_file_prefix", default="./logs/demo.log")
+define("log_rotate_mode", default="size")
+define("log_file_max_size", default=100 * 1000 * 1000)
+define("log_file_num_backups", default=5)
+
+logging.getLogger("tornado.access").disabled = True
+
+
+def main():
+    AsyncIOMainLoop().install()
+
+    tornado.options.parse_command_line()
+
+    application = create_app()
+    http_server = tornado.httpserver.HTTPServer(application)
+    http_server.listen(options.port)
+    # tornado.ioloop.IOLoop.current().start()
+    asyncio.get_event_loop().run_forever().start()
+
+
+if __name__ == '__main__':
+    main()
