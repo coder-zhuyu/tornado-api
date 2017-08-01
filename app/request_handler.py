@@ -18,4 +18,4 @@ class BaseRequestHandler(RequestHandler):
         self.set_status(status)
         self.set_header('Content-Type', 'application/json; charset=utf-8')
 
-        self.write(json.dumps(resp_dict).encode('utf8'))
+        self.write(json.dumps(resp_dict, ensure_ascii=False))
