@@ -14,6 +14,7 @@ load_dotenv(find_dotenv())
 
 from app import create_app
 
+define("host", default="127.0.0.1", help="run on the given host", type=str)
 define("port", default=9097, help="run on the given port", type=int)
 define("log_file_prefix", default="./logs/demo.log")
 define("log_rotate_mode", default="size")
@@ -28,11 +29,17 @@ def main():
 
     tornado.options.parse_command_line()
 
+    loop = asyncio.get_event_loop()
+    from app.db import create_db_pool
+    loop.run_until_complete(create_db_pool())
+
     application = create_app()
     http_server = tornado.httpserver.HTTPServer(application)
-    http_server.listen(options.port)
+    http_server.listen(options.port, options.host)
+
     # tornado.ioloop.IOLoop.current().start()
-    asyncio.get_event_loop().run_forever().start()
+
+    loop.run_forever().start()
 
 
 if __name__ == '__main__':

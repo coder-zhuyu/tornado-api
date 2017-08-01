@@ -9,6 +9,7 @@ class Config:
     db_schema = os.getenv('DB_SCHEMA')
     db_pool_minsize = os.getenv('DB_POOL_MINSIZE')
     db_pool_maxsize = os.getenv('DB_POOL_MAXSIZE')
+    db_connect_timeout = os.getenv('DB_CONNECT_TIMEOUT')
 
 
 class DevelopmentConfig(Config):
@@ -20,6 +21,7 @@ class DevelopmentConfig(Config):
     db_schema = 'api'
     db_pool_minsize = 50
     db_pool_maxsize = 100
+    db_connect_timeout = 30
 
 
 class TestingConfig(Config):
