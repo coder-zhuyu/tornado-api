@@ -30,8 +30,8 @@ def main():
     tornado.options.parse_command_line()
 
     loop = asyncio.get_event_loop()
-    from app.db import create_db_pool
-    loop.run_until_complete(create_db_pool())
+    from app.db import Db
+    loop.run_until_complete(Db.create_db_pool())
 
     application = create_app()
     http_server = tornado.httpserver.HTTPServer(application)

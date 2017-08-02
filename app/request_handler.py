@@ -5,6 +5,10 @@ import json
 
 
 class BaseRequestHandler(RequestHandler):
+    async def get_current_user(self):
+        user_id = self.get_secure_cookie("__user__")
+        if not user_id:
+            return None
 
     def response_json(self, result=None, code='000000', status=200):
         resp_dict = {

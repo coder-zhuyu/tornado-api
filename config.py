@@ -1,4 +1,5 @@
 import os
+import logging
 
 
 class Config:
@@ -11,6 +12,8 @@ class Config:
     db_pool_maxsize = os.getenv('DB_POOL_MAXSIZE')
     db_connect_timeout = os.getenv('DB_CONNECT_TIMEOUT')
 
+    logging.getLogger('tornado.application').setLevel(logging.INFO)
+
 
 class DevelopmentConfig(Config):
 
@@ -22,6 +25,8 @@ class DevelopmentConfig(Config):
     db_pool_minsize = 50
     db_pool_maxsize = 100
     db_connect_timeout = 30
+
+    logging.getLogger('tornado.application').setLevel(logging.DEBUG)
 
 
 class TestingConfig(Config):
