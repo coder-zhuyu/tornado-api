@@ -3,6 +3,9 @@ import logging
 
 
 class Config:
+    debug = False
+    cookie_secret = os.getenv('COOKIE_SECRET')
+
     db_host = os.getenv('DB_HOST')
     db_port = os.getenv('DB_PORT')
     db_user = os.getenv('DB_USER')
@@ -16,6 +19,8 @@ class Config:
 
 
 class DevelopmentConfig(Config):
+    # debug = True
+    cookie_secret = "__TODO:_GENERATE_YOUR_OWN_RANDOM_VALUE_HERE__"
 
     db_host = '10.0.32.34'
     db_port = 3306
