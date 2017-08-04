@@ -5,6 +5,7 @@ from .log import debug_log, info_log, warning_log, error_log
 
 
 class Db:
+    """Db sql execute using aiomysql pool."""
     __db_pool = {'mysql': None}
 
     @staticmethod
@@ -38,6 +39,19 @@ class Db:
 
     @staticmethod
     async def select(query, args, size=None):
+        """Executes the given select operation
+
+        Executes the given select operation substituting any markers with
+        the given parameters.
+
+        For example, getting all rows where id is 5:
+          Db.select("SELECT * FROM t1 WHERE id = %s", (5,))
+
+        :param query: ``str`` sql statement
+        :param args: ``tuple`` or ``list`` of arguments for sql query
+        :param size: ``int`` or None, size rows returned
+        :returns: ``list``
+        """
         result = None
         try:
             pool = await Db.get_db_pool()
@@ -54,6 +68,18 @@ class Db:
 
     @staticmethod
     async def select_one(query, args):
+        """Executes the given select operation, but only fetch one row.
+
+        Executes the given select operation substituting any markers with
+        the given parameters.
+
+        For example, getting one row where id is 5:
+          Db.select_one("SELECT * FROM t1 WHERE id = %s limit 1", (5,))
+
+        :param query: ``str`` sql statement
+        :param args: ``tuple`` or ``list`` of arguments for sql query
+        :returns: ``dict``
+        """
         result = None
         try:
             pool = await Db.get_db_pool()
@@ -67,7 +93,19 @@ class Db:
 
     @staticmethod
     async def insert(query, args):
-        affected_rows = 0
+        """Executes the given insert operation
+
+        Executes the given insert operation substituting any markers with
+        the given parameters.
+
+        For example, insert table t1 one row:
+          Db.insert("insert into t1(id, name) values (%s, %s)", (5, 'Jack'))
+
+        :param query: ``str`` sql statement
+        :param args: ``tuple`` or ``list`` of arguments for sql query
+        :returns: ``int``, number of rows that has been produced of affected, if sql exec exception, return -1.
+        """
+        affected_rows = -1
         pool = await Db.get_db_pool()
         async with pool.acquire() as conn:
             try:
@@ -77,13 +115,25 @@ class Db:
                 await conn.commit()
             except Exception as e:
                 await conn.rollback()
-                affected_rows = 0
+                affected_rows = -1
                 error_log("db insert errror [%s]: %s", query % tuple(args), e)
         return affected_rows
 
     @staticmethod
     async def insert_many(query, args):
-        affected_rows = 0
+        """Executes the given insert operation
+
+        Executes the given insert operation substituting any markers with
+        the given parameters.
+
+        For example, insert table t1 many rows:
+          Db.insert_many("insert into t1(id, name) values (%s, %s)", [(5, 'Jack'), (6,'Tom')])
+
+        :param query: ``str`` sql statement
+        :param args: ``tuple`` or ``list`` of arguments for sql query
+        :returns: ``int``, number of rows that has been produced of affected, if sql exec exception, return -1.
+        """
+        affected_rows = -1
         pool = await Db.get_db_pool()
         async with pool.acquire() as conn:
             try:
@@ -93,13 +143,25 @@ class Db:
                 await conn.commit()
             except Exception as e:
                 await conn.rollback()
-                affected_rows = 0
-                error_log("db insert many errror [%s]: %s", query % tuple(args), e)
+                affected_rows = -1
+                error_log("db insert many errror [%s]: %s", query % list(args), e)
         return affected_rows
 
     @staticmethod
     async def update(query, args):
-        affected_rows = 0
+        """Executes the given update operation
+
+        Executes the given update operation substituting any markers with
+        the given parameters.
+
+        For example, update table t1 where id is 5:
+          Db.update("update t1 set name=%s where id=%s", ('Jack', 5))
+
+        :param query: ``str`` sql statement
+        :param args: ``tuple`` or ``list`` of arguments for sql query
+        :returns: ``int``, number of rows that has been produced of affected, if sql exec exception, return -1.
+        """
+        affected_rows = -1
         pool = await Db.get_db_pool()
         async with pool.acquire() as conn:
             try:
@@ -109,6 +171,6 @@ class Db:
                 await conn.commit()
             except Exception as e:
                 await conn.rollback()
-                affected_rows = 0
+                affected_rows = -1
                 error_log("db update errror [%s]: %s", query % tuple(args), e)
         return affected_rows
