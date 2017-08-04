@@ -44,6 +44,12 @@ class BaseRequestHandler(RequestHandler):
 
         self.write(json.dumps(resp_dict, ensure_ascii=False))
 
+    def write_error(self, status_code, **kwargs):
+        """Override error handler."""
+        code = str(status_code) + '000'
+
+        self.response_json(code=code)
+
 
 def login_required(f):
     """Decorate methods with this to require that the user be logged in.
