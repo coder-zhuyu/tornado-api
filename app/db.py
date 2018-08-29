@@ -52,7 +52,6 @@ class Db:
         :param size: ``int`` or None, size rows returned
         :returns: ``list``
         """
-        result = None
         try:
             pool = await Db.get_db_pool()
             async with pool.acquire() as conn:
@@ -62,9 +61,13 @@ class Db:
                         result = await cursor.fetchall()
                     else:
                         result = await cursor.fetchmany(size)
+                    rowcount = cursor.rowcount
         except Exception as e:
-            error_log("db select errror [%s]: %s", query % tuple(args), e)
-        return result
+            if type(args) is list:
+                args = tuple(args)
+            error_log("db select errror [%s]: %s", query % args, e)
+            raise
+        return result, rowcount
 
     @staticmethod
     async def select_one(query, args):
@@ -80,16 +83,19 @@ class Db:
         :param args: ``tuple`` or ``list`` of arguments for sql query
         :returns: ``dict``
         """
-        result = None
         try:
             pool = await Db.get_db_pool()
             async with pool.acquire() as conn:
                 async with conn.cursor() as cursor:
                     await cursor.execute(query, args)
                     result = await cursor.fetchone()
+                    rowcount = cursor.rowcount
         except Exception as e:
-            error_log("db select one errror [%s]: %s", query % tuple(args), e)
-        return result
+            if type(args) is list:
+                args = tuple(args)
+            error_log("db select one errror [%s]: %s", query % args, e)
+            raise
+        return result, rowcount
 
     @staticmethod
     async def insert(query, args):
@@ -103,21 +109,23 @@ class Db:
 
         :param query: ``str`` sql statement
         :param args: ``tuple`` or ``list`` of arguments for sql query
-        :returns: ``int``, number of rows that has been produced of affected, if sql exec exception, return -1.
+        :returns: ``int``, number of rows that has been produced of affected
         """
-        affected_rows = -1
         pool = await Db.get_db_pool()
         async with pool.acquire() as conn:
             try:
                 async with conn.cursor() as cursor:
                     await cursor.execute(query, args)
                     affected_rows = cursor.rowcount
+                    lastrowid = cursor.lastrowid
                 await conn.commit()
             except Exception as e:
                 await conn.rollback()
-                affected_rows = -1
-                error_log("db insert errror [%s]: %s", query % tuple(args), e)
-        return affected_rows
+                if type(args) is list:
+                    args = tuple(args)
+                error_log("db insert errror [%s]: %s", query % args, e)
+                raise
+        return affected_rows, lastrowid
 
     @staticmethod
     async def insert_many(query, args):
@@ -131,9 +139,8 @@ class Db:
 
         :param query: ``str`` sql statement
         :param args: ``tuple`` or ``list`` of arguments for sql query
-        :returns: ``int``, number of rows that has been produced of affected, if sql exec exception, return -1.
+        :returns: ``int``, number of rows that has been produced of affected
         """
-        affected_rows = -1
         pool = await Db.get_db_pool()
         async with pool.acquire() as conn:
             try:
@@ -143,8 +150,8 @@ class Db:
                 await conn.commit()
             except Exception as e:
                 await conn.rollback()
-                affected_rows = -1
                 error_log("db insert many errror [%s]: %s", query % list(args), e)
+                raise
         return affected_rows
 
     @staticmethod
@@ -159,9 +166,8 @@ class Db:
 
         :param query: ``str`` sql statement
         :param args: ``tuple`` or ``list`` of arguments for sql query
-        :returns: ``int``, number of rows that has been produced of affected, if sql exec exception, return -1.
+        :returns: ``int``, number of rows that has been produced of affected
         """
-        affected_rows = -1
         pool = await Db.get_db_pool()
         async with pool.acquire() as conn:
             try:
@@ -171,6 +177,8 @@ class Db:
                 await conn.commit()
             except Exception as e:
                 await conn.rollback()
-                affected_rows = -1
-                error_log("db update errror [%s]: %s", query % tuple(args), e)
+                if type(args) is list:
+                    args = tuple(args)
+                error_log("db update errror [%s]: %s", query % args, e)
+                raise
         return affected_rows

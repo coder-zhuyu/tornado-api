@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from ..db import Db
-from ..request_handler import BaseRequestHandler, login_required
+from ..request_handler import BaseRequestHandler
 from ..log import debug_log, info_log, warning_log, error_log
 from schema import Schema, Regex
 import concurrent.futures
@@ -9,6 +9,10 @@ import tornado
 import tornado.escape
 import tornado.web
 import asyncio
+from utils.token import encode as token_encode
+import datetime
+import time
+from config import config
 
 # A thread pool to be used for password hashing with bcrypt.
 executor = concurrent.futures.ThreadPoolExecutor(2)
@@ -21,31 +25,34 @@ class AuthLoginHandler(BaseRequestHandler):
         password = self.get_argument('password')
 
         Schema(str).validate(user_name)
-        Schema(str).validate((password))
+        Schema(str).validate(password)
 
-        result = await Db.select_one("SELECT * FROM user_admin where username=%s limit 1", user_name)
+        result, row_count = await Db.select_one("SELECT * FROM user where username=%s limit 1", user_name)
         debug_log(result)
-        if not result:
+        if not result or not row_count:
             self.response_json(code='401001')
             return
 
         # check password
-        job = executor.submit(bcrypt.hashpw, tornado.escape.utf8(password), tornado.escape.utf8(result['password_hash']))
+        job = executor.submit(bcrypt.hashpw, tornado.escape.utf8(password), tornado.escape.utf8(result['password']))
         hashed_password = tornado.escape.to_unicode(await asyncio.wrap_future(job))
 
-        if hashed_password == result['password_hash']:
-            self.set_secure_cookie('user', str(result['id']))
-            self.response_json()
+        if hashed_password == result['password']:
+            now = datetime.datetime.now()
+            data = {
+                'uid': result['id'],
+                'exp': int(time.mktime((now + datetime.timedelta(seconds=config.token_exp_delta)).timetuple())),
+                'at': int(time.mktime(now.timetuple())),
+            }
+            token = token_encode(data)
+            data['token'] = token
+            self.response_json(data=data)
         else:
             self.response_json(code='401001')
 
 
 class AuthLogoutHandler(BaseRequestHandler):
     """Auth logout."""
-    @login_required
     async def get(self):
-        # clear cookie
-        self.clear_cookie('user')
-        current_user = await self.get_current_user()
-        debug_log(current_user)
+        pass
         self.response_json()

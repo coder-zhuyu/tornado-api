@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import tornado.web
 from config import config
+from .log import init_log
 from .api_1_0 import UserHandler, AuthLoginHandler, AuthLogoutHandler
 
 
@@ -9,6 +10,8 @@ def create_app():
         cookie_secret=config.cookie_secret,
         debug=config.debug
     )
+
+    init_log(config.log_path, config.log_level)
 
     handlers = [
         ("/user/([0-9]+)", UserHandler),

@@ -1,33 +1,34 @@
 # -*- coding: utf-8 -*-
 from ..db import Db
-from ..request_handler import BaseRequestHandler, login_required
+from ..request_handler import BaseRequestHandler
 from ..log import debug_log, info_log, warning_log, error_log
 from schema import Schema, Regex
 
 
 class UserHandler(BaseRequestHandler):
-    @login_required
     async def get(self, user_id):
-        result = await Db.select_one("SELECT id, username, phone, email FROM user_admin where id=%s limit 1",
-                                     int(user_id))
-        debug_log(result)
+        # check token的user_id 和 user_id是否一致 不一致返回403
+        self.check_user_id(user_id)
+
+        result, row_count = await Db.select("SELECT id, username, mobile FROM user where id=%s limit 1", int(user_id))
         if result is None:
             self.response_json(code='600100')
         else:
-            self.response_json(result=result)
+            self.response_json(data=result)
 
-    @login_required
     async def put(self, user_id):
-        phone = self.get_argument('phone')
-        name = self.get_argument('name')
+        self.check_user_id(user_id)
 
-        Regex(r'^1[0-9]{10}$').validate(phone)
+        mobile = self.get_argument('mobile')
+        name = self.get_argument('username')
+
+        Regex(r'^1[3-9][0-9]{9}$').validate(mobile)
         Schema(str).validate(name)
 
-        affected_rows = await Db.update("UPDATE user_admin set phone=%s, name=%s where id=%s",
-                                        (phone, name, int(user_id)))
+        affected_rows = await Db.update("UPDATE user set mobile=%s, username=%s where id=%s",
+                                        (mobile, name, int(user_id)))
         debug_log(affected_rows)
-        if affected_rows is -1:
+        if not affected_rows:
             self.response_json(code='600101')
         else:
             self.response_json()
