@@ -8,6 +8,7 @@ from .log import debug_log, info_log, warning_log, error_log
 from utils.token import decode as token_decode
 from jwt.exceptions import ExpiredSignatureError
 from .exceptions import UserIDException
+import schema
 
 not_need_token_urls = {
     '/auth/login',
@@ -72,7 +73,12 @@ class BaseRequestHandler(RequestHandler):
             exception = kwargs['exc_info'][1]
             if isinstance(exception, UserIDException):
                 status_code = 403
-
+            elif isinstance(exception, schema.SchemaMissingKeyError):
+                self.response_json(code='400001')
+                return
+            elif isinstance(exception, schema.SchemaError):
+                self.response_json(code='400002')
+                return
         code = str(status_code) + '000'
 
         self.response_json(code=code, status=status_code)
