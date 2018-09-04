@@ -19,9 +19,9 @@ class Db:
             user=config.db_user,
             password=config.db_password,
             db=config.db_schema,
-            charset='utf8',
+            charset='utf8mb4',
             cursorclass=aiomysql.DictCursor,
-            autocommit=True,
+            autocommit=False,
             minsize=config.db_pool_minsize,
             maxsize=config.db_pool_maxsize,
             connect_timeout=config.db_connect_timeout,
@@ -180,5 +180,35 @@ class Db:
                 if type(args) is list:
                     args = tuple(args)
                 error_log("db update errror [%s]: %s", query % args, e)
+                raise
+        return affected_rows
+
+    @staticmethod
+    async def execute_many(query_list, args_list):
+        """Executes the given dml operations
+
+        Executes the given dml operations substituting any markers with
+        the given parameters.
+
+        For example, insert table t1 many rows:
+          Db.insert_many("insert into t1(id, name) values (%s, %s)", [(5, 'Jack'), (6,'Tom')])
+
+        :param query_list: ``list`` sql statement list
+        :param args_list: ``list`` of arguments for sql query
+        :returns: ``int``, number of rows that has been produced of affected
+        """
+        pool = await Db.get_db_pool()
+        async with pool.acquire() as conn:
+            i = 0
+            try:
+                async with conn.cursor() as cursor:
+                    for query, args in zip(query_list, args_list):
+                        await cursor.execute(query, args)
+                        i += 1
+                    affected_rows = cursor.rowcount
+                await conn.commit()
+            except Exception as e:
+                await conn.rollback()
+                error_log("db execute many errror [%s]: %s", query_list[i] % list(args_list[i]), e)
                 raise
         return affected_rows
