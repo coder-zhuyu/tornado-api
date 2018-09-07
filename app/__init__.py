@@ -1,24 +1,34 @@
 # -*- coding: utf-8 -*-
-import tornado.web
+import os
+import re
 from config import config
-from .log import init_log
-from .api_1_0 import UserHandler, AuthLoginHandler, AuthLogoutHandler
+from .log import init_log, debug_log
+from .route import app
+import importlib
+
+
+def __import_module(dir_path):
+    module_list = re.split('[./]', dir_path)
+    module_list = [x for x in module_list if x]
+    module_path = '.'.join(module_list)
+    debug_log(module_path)
+    file_list = os.listdir(dir_path)
+    for f in file_list:
+        if f.endswith('.py') and f != '__init__.py':
+            module_name = module_path + '.' + os.path.splitext(f)[0]
+            debug_log(module_name)
+            importlib.import_module(module_name)
 
 
 def create_app():
-    settings = dict(
-        cookie_secret=config.cookie_secret,
-        debug=config.debug
-    )
-
     init_log(config.log_path, config.log_level)
 
-    handlers = [
-        ("/user/([0-9]+)", UserHandler),
-        ("/auth/login", AuthLoginHandler),
-        ("/auth/logout", AuthLogoutHandler),
-    ]
-
-    app = tornado.web.Application(handlers, **settings)
+    # handlers = [
+    #     ("/user/([0-9]+)", UserHandler),
+    #     ("/auth/login", AuthLoginHandler),
+    # ]
+    #
+    # app = tornado.web.Application(handlers, **settings)
+    __import_module('./app/api_1_0')
 
     return app

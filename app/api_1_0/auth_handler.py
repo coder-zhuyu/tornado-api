@@ -13,11 +13,13 @@ from utils.token import encode as token_encode
 import datetime
 import time
 from config import config
+from ..route import app
 
 # A thread pool to be used for password hashing with bcrypt.
 executor = concurrent.futures.ThreadPoolExecutor(2)
 
 
+@app.route('/auth/login')
 class AuthLoginHandler(BaseRequestHandler):
     """Auth login."""
     async def post(self):
@@ -51,8 +53,25 @@ class AuthLoginHandler(BaseRequestHandler):
             self.response_json(code='401001')
 
 
+@app.route('/auth/logout')
 class AuthLogoutHandler(BaseRequestHandler):
     """Auth logout."""
     async def get(self):
         pass
         self.response_json()
+
+
+@app.route('/auth/token/refresh')
+class TokenRefreshHandler(BaseRequestHandler):
+    async def get(self):
+        uid = self.get_user_id()
+
+        now = datetime.datetime.now()
+        data = {
+            'uid': uid,
+            'exp': int(time.mktime((now + datetime.timedelta(seconds=config.token_exp_delta)).timetuple())),
+            'at': int(time.mktime(now.timetuple())),
+        }
+        token = token_encode(data)
+        data['token'] = token
+        self.response_json(data=data)

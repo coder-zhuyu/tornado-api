@@ -27,7 +27,7 @@ class DevelopmentConfig(Config):
     # debug = True
     cookie_secret = "__TODO:_GENERATE_YOUR_OWN_RANDOM_VALUE_HERE__"
 
-    db_host = '192.168.165.11'
+    db_host = '192.168.165.18'
     db_port = 3306
     db_user = 'root'
     db_password = 'Zhuyu!2017@'

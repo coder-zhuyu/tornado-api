@@ -3,8 +3,10 @@ from ..db import Db
 from ..request_handler import BaseRequestHandler
 from ..log import debug_log, info_log, warning_log, error_log
 from schema import Schema, Regex
+from ..route import app
 
 
+@app.route('/user/([0-9]+)')
 class UserHandler(BaseRequestHandler):
     async def get(self, user_id):
         # check token的user_id 和 user_id是否一致 不一致返回403
